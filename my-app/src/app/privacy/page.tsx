@@ -39,10 +39,10 @@ export default function PrivacyPolicyPage() {
       <p className="text-slate-400">
         If you have any questions about this policy, contact us at{" "}
         <a
-          href="mailto:cleandoc.support@gmail.com"
+          href="mailto:abdullateefqudusleeq@gmail.com"
           className="text-blue-400 underline"
         >
-          cleandoc.support@gmail.com
+          abdullateefqudusleeq@gmail.com
         </a>.
       </p>
 
