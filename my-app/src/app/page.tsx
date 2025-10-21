@@ -1,119 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import { ArrowRight, Zap, FileText, Share2, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Copy, Trash2, Sparkles } from "lucide-react";
+import { detectStructure, rebuildDocument } from "@/utils/cleanDoc";
 
-export default function LandingPage() {
-  const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+export default function Dashboard() {
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
+  const [isCleaning, setIsCleaning] = useState(false);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      if (session) {
-        router.push("/dashboard");
-      } else {
-        setIsChecking(false);
-      }
-    };
-    checkSession();
-  }, [router]);
+  const handleClean = async () => {
+    if (!input.trim()) return;
+    setIsCleaning(true);
+    await new Promise((r) => setTimeout(r, 300)); // simulate loading
 
-  const handleLogin = async () => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin, // 👈 simpler redirect
-      },
-    });
-    if (error) {
-      console.error("Login error:", error.message);
-      setIsLoading(false);
-    }
+    const structured = detectStructure(input);
+    const cleaned = rebuildDocument(structured);
+    setOutput(cleaned);
+
+    setIsCleaning(false);
   };
 
-  if (isChecking) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-blue-400 border-t-blue-200 rounded-full animate-spin" />
-          <p className="text-slate-300 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleClear = () => {
+    setInput("");
+    setOutput("");
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(output);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-slate-100 flex flex-col">
-      {/* Navbar */}
-      <nav className="flex justify-between items-center px-6 py-4 border-b border-slate-800">
-        <h1 className="text-xl font-semibold tracking-tight">CleanDoc</h1>
-        <button
-          onClick={handleLogin}
-          disabled={isLoading}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition disabled:opacity-50"
-        >
-          {isLoading ? "Connecting..." : "Try for free"}
-          <ArrowRight size={18} />
-        </button>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white px-6 py-10">
+      <div className="max-w-6xl mx-auto space-y-10">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center mb-10 bg-gradient-to-r from-blue-300 to-blue-100 bg-clip-text text-transparent">
+          Clean Your Document
+        </h1>
 
-      {/* Hero Section */}
-      <main className="flex flex-col items-center justify-center flex-grow text-center px-6 py-20">
-        <div className="max-w-2xl">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
-            Clean messy documents into <span className="text-blue-400">ready-to-send</span> perfection ✨
-          </h1>
-          <p className="text-lg text-slate-400 mb-8">
-            CleanDoc uses smart formatting to fix spacing, remove noise, and organize your documents — instantly.
-          </p>
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Input */}
+          <div className="flex flex-col bg-slate-900/60 rounded-xl border border-slate-800 p-4">
+            <label className="text-sm text-slate-400 mb-2">
+              Raw OCR / Copied Text
+            </label>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Paste your messy text here..."
+              className="flex-1 bg-transparent text-slate-200 resize-none min-h-[400px] outline-none"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={handleClear}
+                className="flex items-center gap-1 text-slate-400 hover:text-red-400 text-sm"
+              >
+                <Trash2 className="w-4 h-4" /> Clear
+              </button>
+            </div>
+          </div>
+
+          {/* Output */}
+          <div className="flex flex-col bg-slate-900/60 rounded-xl border border-slate-800 p-4">
+            <label className="text-sm text-slate-400 mb-2">
+              Cleaned & Structured Text
+            </label>
+            <div className="flex-1 bg-transparent text-slate-200 whitespace-pre-wrap overflow-y-auto min-h-[400px] border border-slate-800 rounded-lg p-3">
+              {isCleaning ? (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin mb-2" />
+                  Cleaning text...
+                </div>
+              ) : output ? (
+                output
+              ) : (
+                <p className="text-slate-500 italic text-sm">
+                  Output will appear here
+                </p>
+              )}
+            </div>
+
+            {output && (
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1 text-slate-300 hover:text-blue-400 text-sm"
+                >
+                  <Copy className="w-4 h-4" /> Copy
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="flex justify-center">
           <button
-            onClick={handleLogin}
-            disabled={isLoading}
-            className="flex items-center justify-center gap-2 mx-auto bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-lg text-lg font-medium transition disabled:opacity-50"
+            onClick={handleClean}
+            disabled={isCleaning}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 font-semibold text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all"
           >
-            {isLoading ? "Connecting..." : "Start with Google"}
-            <ArrowRight size={20} />
+            {isCleaning ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Cleaning...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" /> Clean Document
+              </>
+            )}
           </button>
         </div>
-      </main>
-
-      {/* Features */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 pb-20 max-w-5xl mx-auto">
-        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl">
-          <Zap className="text-blue-400 mb-4" size={28} />
-          <h3 className="text-xl font-semibold mb-2">Instant Cleanup</h3>
-          <p className="text-slate-400">
-            Upload your text or document and watch it transform into a clean, well-formatted version in seconds.
-          </p>
-        </div>
-
-        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl">
-          <FileText className="text-blue-400 mb-4" size={28} />
-          <h3 className="text-xl font-semibold mb-2">Smart Formatting</h3>
-          <p className="text-slate-400">
-            Automatically adjust headers, paragraphs, and spacing to professional standards.
-          </p>
-        </div>
-
-        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl">
-          <Share2 className="text-blue-400 mb-4" size={28} />
-          <h3 className="text-xl font-semibold mb-2">Easy Export</h3>
-          <p className="text-slate-400">
-            Download your cleaned document or share it instantly with others.
-          </p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-800 py-6 text-center text-slate-500 text-sm">
-        © {new Date().getFullYear()} CleanDoc. Built for clarity and speed.
-      </footer>
+      </div>
     </div>
   );
 }
