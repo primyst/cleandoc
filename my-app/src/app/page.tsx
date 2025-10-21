@@ -16,7 +16,7 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showCleaned, setShowCleaned] = useState(false);
 
-  // ✅ Auth logic (untouched)
+  // ✅ Auth logic
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -44,7 +44,7 @@ export default function LandingPage() {
     }
   };
 
-  // 🔄 Auto toggle demo every few seconds
+  // 🔄 Toggle demo every few seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setShowCleaned((prev) => !prev);
@@ -183,8 +183,17 @@ spacing.`}
       </section>
 
       {/* Footer */}
-      <footer className="mt-20 text-center text-slate-500 text-sm">
-        Made with ❤️ by Abdulqudus
+      <footer className="mt-20 text-center text-slate-500 text-sm space-y-2">
+        <p>
+          <a href="/privacy" className="hover:text-blue-400 transition-colors">
+            Privacy Policy
+          </a>{" "}
+          ·{" "}
+          <a href="/terms" className="hover:text-blue-400 transition-colors">
+            Terms of Service
+          </a>
+        </p>
+        <p>Made with ❤️ by Abdulqudus</p>
       </footer>
     </main>
   );
