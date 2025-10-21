@@ -1,0 +1,30 @@
+export function detectSections(text: string) {
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean)
+  const sections: { header: string; content: string }[] = []
+  let currentHeader = ""
+  let currentContent = ""
+
+  const headerRegex = /^[A-Z][A-Z\s\d\-:]+$/ // Detect lines in ALL CAPS or bold-style headings
+
+  for (const line of lines) {
+    if (headerRegex.test(line) && line.length > 3) {
+      // Save previous section
+      if (currentHeader) {
+        sections.push({ header: currentHeader, content: currentContent.trim() })
+      }
+      currentHeader = line
+      currentContent = ""
+    } else {
+      currentContent += line + " "
+    }
+  }
+
+  if (currentHeader) {
+    sections.push({ header: currentHeader, content: currentContent.trim() })
+  }
+
+  return {
+    title: lines[0],
+    sections
+  }
+}
