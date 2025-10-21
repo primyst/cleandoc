@@ -11,6 +11,7 @@
   "dependencies": {
     "@bytescale/upload-widget-react": "^4.19.0",
     "@google-cloud/vision": "^5.3.4",
+    "pdfjs-dist": "^1.5.222",
     "@gradio/client": "^1.19.0",
     "@headlessui/react": "^2.2.9",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
