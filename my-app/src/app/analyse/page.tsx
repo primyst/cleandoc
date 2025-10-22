@@ -2,6 +2,8 @@
 
 import React, { useState } from "react"
 import { Upload, FileText, Loader2, Sparkles } from "lucide-react"
+import { extractTextFromPDF } from "@/lib/pdfParser"
+import { detectSections } from "@/lib/cleanDocParser"
 
 export default function AnalyzePage() {
   const [file, setFile] = useState<File | null>(null)
@@ -13,14 +15,30 @@ export default function AnalyzePage() {
   }
 
   const handleAnalyze = async () => {
-    if (!file) return
-    setIsAnalyzing(true)
-    // TODO: connect to OCR/LLM API
-    setTimeout(() => {
-      setIsAnalyzing(false)
-      alert("Analysis complete (mock). We'll detect headers soon 😎")
-    }, 2000)
+  if (!file) return
+  setIsAnalyzing(true)
+
+  try {
+    let extractedText = ""
+
+    if (file.type === "application/pdf") {
+      extractedText = await extractTextFromPDF(file)
+    } else {
+      // Future: handle image OCR here with Tesseract.js
+      extractedText = "Image OCR not implemented yet."
+    }
+
+    const result = detectSections(extractedText)
+    console.log("Detected structure:", result)
+
+    alert("Detected " + result.sections.length + " sections ✅")
+  } catch (error) {
+    console.error(error)
+    alert("Failed to analyze document.")
+  } finally {
+    setIsAnalyzing(false)
   }
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 flex flex-col items-center justify-center p-6">
