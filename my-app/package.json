@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@bytescale/upload-widget-react": "^4.19.0",
+"openai": "^4.29.2",
 "pdfmake": "^0.1.65",
 "docx": "9.5.1",
 "file-saver": "^2.0.5",
