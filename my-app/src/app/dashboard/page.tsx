@@ -1,96 +1,133 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Upload, FileText, Loader2 } from 'lucide-react'
+import React, { useState } from "react";
+import { Upload, Loader2, FileText, LayoutList, Eye } from "lucide-react";
 
 export default function Dashboard() {
-  const [file, setFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<string>('')
+  const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [view, setView] = useState<"structured" | "raw">("structured");
 
-  // Handle file upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0])
+    if (e.target.files?.[0]) {
+      setFile(e.target.files[0]);
     }
-  }
+  };
 
-  // Send file to /analyse route
-  const handleAnalyse = async () => {
-    if (!file) return alert('Please upload a file first.')
-    setLoading(true)
+  const handleAnalyze = async () => {
+    if (!file) return;
+    setIsLoading(true);
 
-    const formData = new FormData()
-    formData.append('file', file)
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      const res = await fetch('/analyse', {
-        method: 'POST',
+      const res = await fetch("/analyse", {
+        method: "POST",
         body: formData,
-      })
-      const data = await res.json()
-      setResult(data.text || 'No readable text found.')
+      });
+
+      const data = await res.json();
+      setResult(data);
     } catch (err) {
-      console.error(err)
-      alert('Error analyzing document.')
+      console.error(err);
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-      <div className="max-w-2xl w-full bg-white shadow-md rounded-2xl p-8 text-center">
-        <h1 className="text-3xl font-bold mb-6 flex items-center justify-center gap-2">
-          <FileText className="w-8 h-8 text-blue-500" />
-          CleanDoc Analyzer
-        </h1>
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white px-6 py-10">
+      <section className="max-w-4xl mx-auto text-center">
+        <h1 className="text-4xl font-semibold mb-2">CleanDoc Dashboard</h1>
+        <p className="text-slate-400 mb-8">
+          Upload your file and let CleanDoc detect structure, headers, and content.
+        </p>
 
-        {/* Upload Section */}
-        <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 mb-4">
+        <div className="flex flex-col items-center justify-center gap-4 mb-10">
           <input
             type="file"
             accept=".pdf,.png,.jpg,.jpeg"
             onChange={handleFileChange}
-            className="hidden"
-            id="fileInput"
+            className="block text-sm text-slate-300
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-full file:border-0
+              file:text-sm file:font-semibold
+              file:bg-blue-500 file:text-white
+              hover:file:bg-blue-600 transition-all"
           />
-          <label
-            htmlFor="fileInput"
-            className="cursor-pointer text-blue-600 flex flex-col items-center gap-2"
+
+          <button
+            onClick={handleAnalyze}
+            disabled={!file || isLoading}
+            className="px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center gap-2 font-medium disabled:opacity-50"
           >
-            <Upload className="w-6 h-6" />
-            {file ? (
-              <span className="font-medium">{file.name}</span>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Analyzing...
+              </>
             ) : (
-              <span className="font-medium">Click to upload a document</span>
+              <>
+                <Upload className="w-4 h-4" />
+                Analyze Document
+              </>
             )}
-          </label>
+          </button>
         </div>
 
-        {/* Analyse Button */}
-        <button
-          onClick={handleAnalyse}
-          disabled={!file || loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" /> Analyzing...
-            </>
-          ) : (
-            'Analyze Document'
-          )}
-        </button>
-
-        {/* Result Section */}
         {result && (
-          <div className="mt-8 text-left bg-gray-100 p-4 rounded-xl max-h-80 overflow-y-auto">
-            <h2 className="font-semibold text-gray-700 mb-2">Extracted Text:</h2>
-            <pre className="whitespace-pre-wrap text-sm text-gray-800">{result}</pre>
-          </div>
+          <>
+            <div className="flex justify-center gap-4 mb-6">
+              <button
+                onClick={() => setView("structured")}
+                className={`px-4 py-2 rounded-full flex items-center gap-2 ${
+                  view === "structured"
+                    ? "bg-blue-600"
+                    : "bg-slate-800 hover:bg-slate-700"
+                } transition-all`}
+              >
+                <LayoutList className="w-4 h-4" /> Structured View
+              </button>
+              <button
+                onClick={() => setView("raw")}
+                className={`px-4 py-2 rounded-full flex items-center gap-2 ${
+                  view === "raw"
+                    ? "bg-blue-600"
+                    : "bg-slate-800 hover:bg-slate-700"
+                } transition-all`}
+              >
+                <FileText className="w-4 h-4" /> Raw Text
+              </button>
+            </div>
+
+            {view === "structured" ? (
+              <div className="space-y-6 text-left">
+                {result.sections.map((section: any, i: number) => (
+                  <div
+                    key={i}
+                    className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 hover:border-blue-500/40 transition-all"
+                  >
+                    <h3 className="text-xl font-semibold text-blue-400 mb-2">
+                      {section.title}
+                    </h3>
+                    <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
+                      {section.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 text-left">
+                <pre className="text-slate-300 text-sm whitespace-pre-wrap">
+                  {result.rawText}
+                </pre>
+              </div>
+            )}
+          </>
         )}
-      </div>
-    </div>
-  )
+      </section>
+    </main>
+  );
 }
