@@ -9,7 +9,7 @@ export default function LandingPage(): JSX.Element {
   const [isChecking, setIsChecking] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
 
-  // preserve session check
+  // ✅ 1. Check session on mount
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession()
@@ -22,7 +22,36 @@ export default function LandingPage(): JSX.Element {
     checkSession()
   }, [router])
 
-  // preserve OAuth login
+  // ✅ 2. Detect new login (OAuth success)
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        try {
+          // extract user info
+          const email = session.user.email
+          const name =
+            session.user.user_metadata?.full_name ||
+            session.user.user_metadata?.name ||
+            'there'
+
+          // ✅ call API to send welcome email
+          await fetch('/api/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, name }),
+          })
+        } catch (err) {
+          console.error('Email sending failed:', err)
+        }
+
+        router.push('/dashboard')
+      }
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [router])
+
+  // ✅ 3. OAuth login handler
   const handleLogin = async () => {
     setIsLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
@@ -37,6 +66,7 @@ export default function LandingPage(): JSX.Element {
     }
   }
 
+  // rest of your component (spinner + hero + footer)
   if (isChecking) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#FBF9F7]">
