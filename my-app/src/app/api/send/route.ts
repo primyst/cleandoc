@@ -10,6 +10,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await resend.emails.send({
       from: 'CleanDoc <onboarding@resend.dev>',
+to: email,
       subject: 'Welcome to CleanDoc 🧼',
       react: EmailTemplate({ firstName: name }),
     })
