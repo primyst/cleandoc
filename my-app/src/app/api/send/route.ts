@@ -9,8 +9,7 @@ export async function POST(req: Request) {
     const { email, name } = await req.json()
 
     const { data, error } = await resend.emails.send({
-      from: 'CleanDoc <noreply@cleandoc.ai>',
-      to: [email],
+      from: 'CleanDoc <onboarding@resend.dev>',
       subject: 'Welcome to CleanDoc 🧼',
       react: EmailTemplate({ firstName: name }),
     })
