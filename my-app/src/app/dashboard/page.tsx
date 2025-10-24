@@ -19,19 +19,30 @@ export default function Dashboard() {
   const [docs, setDocs] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isPremium, setIsPremium] = useState(true) // temporarily true for testing
+  const [isPremium, setIsPremium] = useState(true) // temporary Pro access for testing
 
+  // ✅ Proper session check (avoids stuck "checking session" state)
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession()
-      if (data.session) {
-        setUser(data.session.user)
-        await loadHistory(data.session.user.id)
-        setIsChecking(false)
-      } else {
+      try {
+        const { data, error } = await supabase.auth.getSession()
+        if (error) throw error
+
+        if (data.session) {
+          setUser(data.session.user)
+          await loadHistory(data.session.user.id)
+        } else {
+          router.push('/')
+          return
+        }
+      } catch (err) {
+        console.error('Session check error:', err)
         router.push('/')
+      } finally {
+        setIsChecking(false)
       }
     }
+
     checkSession()
   }, [router])
 
@@ -158,7 +169,7 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* History */}
+      {/* Document history */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Your Documents</h2>
         {docs.length === 0 ? (
