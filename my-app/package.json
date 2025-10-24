@@ -28,6 +28,7 @@
     "file-saver": "^2.0.5",
     "framer-motion": "^12.9.4",
     "lucide-react": "^0.510.0",
+    "marked": "^16.4.1",
     "next": "^15.5.4",
     "next-auth": "^4.24.11",
     "next-plausible": "^3.12.4",
