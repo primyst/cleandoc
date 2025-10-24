@@ -7,7 +7,6 @@ import { generateDocx } from '@/lib/exportDoc'
 import { generatePDF } from '@/lib/pdfExport'
 import { uploadFile } from '@/lib/supabaseStorage'
 import { getUserDocuments } from '@/lib/documentHistory'
-import { formatTextWithAI } from '@/lib/aiFormat'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -19,7 +18,7 @@ export default function Dashboard() {
   const [docs, setDocs] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isPremium, setIsPremium] = useState(false) // toggle AI formatting for Pro users
+  const [isPremium, setIsPremium] = useState(true) // temporary Pro access for testing
 
   // Check user session
   useEffect(() => {
@@ -48,16 +47,24 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  // Clean text (basic cleaning)
+  // Format text (basic or AI)
   const handleClean = async () => {
+    if (!rawText.trim()) return
     setIsLoading(true)
+
     let result = rawText
 
     if (isAIFormat && isPremium) {
-      // AI-assisted formatting (Pro)
-      result = await formatTextWithAI(rawText)
+      // Secure API call to server
+      const res = await fetch('/api/ai-format', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raw: rawText }),
+      })
+      const data = await res.json()
+      result = data.text || rawText
     } else {
-      // Basic cleaning: remove extra spaces, fix line breaks
+      // Basic cleaning
       result = rawText.replace(/\s+\n/g, '\n').trim()
     }
 
@@ -135,7 +142,7 @@ export default function Dashboard() {
           className="w-full h-40 p-4 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
