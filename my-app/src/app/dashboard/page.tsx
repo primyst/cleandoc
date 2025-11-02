@@ -4,20 +4,23 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { CheckCircle, Lock } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { CheckCircle, Lock, CreditCard, Banknote, Globe } from 'lucide-react'
 
 type Plan = 'free' | 'pro'
+type PaymentMethod = 'paystack' | 'stripe' | 'flutterwave'
 
 export default function SubscriptionSection() {
   const [plan, setPlan] = useState<Plan>('free')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('paystack')
 
   const handleUpgradeClick = () => {
     setShowPaymentModal(true)
   }
 
   const handleConfirmPayment = () => {
-    // Here you can integrate Paystack, Flutterwave, or Stripe
+    // Later: integrate your real payment API here (Paystack, Stripe, etc.)
     setPlan('pro')
     setShowPaymentModal(false)
   }
@@ -72,21 +75,54 @@ export default function SubscriptionSection() {
           <DialogHeader>
             <DialogTitle>Upgrade to Pro</DialogTitle>
             <DialogDescription>
-              Get full access to AI formatting, faster downloads, and more.
+              Choose your preferred payment method to unlock Pro features.
             </DialogDescription>
           </DialogHeader>
 
           <div className="my-4">
             <h3 className="text-lg font-semibold mb-1">Pro Plan - $10/month</h3>
-            <p className="text-gray-600 text-sm">Billed monthly, cancel anytime.</p>
+            <p className="text-gray-600 text-sm mb-4">Billed monthly, cancel anytime.</p>
+
+            <Tabs defaultValue="paystack" onValueChange={(v) => setSelectedPayment(v as PaymentMethod)}>
+              <TabsList className="grid grid-cols-3 mb-4">
+                <TabsTrigger value="paystack" className="flex items-center justify-center space-x-2">
+                  <Banknote className="w-4 h-4" /> <span>Paystack</span>
+                </TabsTrigger>
+                <TabsTrigger value="stripe" className="flex items-center justify-center space-x-2">
+                  <CreditCard className="w-4 h-4" /> <span>Stripe</span>
+                </TabsTrigger>
+                <TabsTrigger value="flutterwave" className="flex items-center justify-center space-x-2">
+                  <Globe className="w-4 h-4" /> <span>Flutterwave</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="paystack">
+                <p className="text-sm text-gray-600 mb-3">
+                  Secure local payments in NGN via card, bank transfer, or USSD.
+                </p>
+              </TabsContent>
+              <TabsContent value="stripe">
+                <p className="text-sm text-gray-600 mb-3">
+                  International payments using Visa, Mastercard, or Apple Pay.
+                </p>
+              </TabsContent>
+              <TabsContent value="flutterwave">
+                <p className="text-sm text-gray-600 mb-3">
+                  Supports African currencies and multiple payment channels.
+                </p>
+              </TabsContent>
+            </Tabs>
           </div>
 
-          <div className="flex justify-end space-x-3">
+          <div className="flex justify-between items-center mt-4">
             <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleConfirmPayment} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-              Confirm Payment
+            <Button
+              onClick={handleConfirmPayment}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+            >
+              Pay with {selectedPayment.charAt(0).toUpperCase() + selectedPayment.slice(1)}
             </Button>
           </div>
         </DialogContent>
