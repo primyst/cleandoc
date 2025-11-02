@@ -1,101 +1,164 @@
 'use client'
 
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { CheckCircle, Lock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
+import { generateDocx } from '@/lib/exportDoc'
+import { generatePDF } from '@/lib/pdfExport'
+import { cleanText } from '@/lib/cleanText'
 
-type Plan = 'free' | 'pro'
+export default function Dashboard() {
+  const [user, setUser] = useState<any>(null)
+  const [plan, setPlan] = useState<'free' | 'pro'>('free')
+  const [rawText, setRawText] = useState('')
+  const [cleanedText, setCleanedText] = useState('')
+  const [isAIFormat, setIsAIFormat] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-export default function SubscriptionSection() {
-  const [plan, setPlan] = useState<Plan>('free')
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const router = useRouter()
 
-  const handleUpgradeClick = () => setShowPaymentModal(true)
-  const handleConfirmPayment = () => {
-    setPlan('pro')
-    setShowPaymentModal(false)
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) router.push('/')
+      else {
+        setUser(user)
+        // Check user plan (replace this with actual plan check)
+        const { data } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+        if (data?.plan) setPlan(data.plan)
+      }
+    }
+    fetchUser()
+  }, [router])
+
+  const handleClean = () => {
+    const cleaned = cleanText(rawText)
+    setCleanedText(cleaned)
   }
 
-  const renderFeature = (feature: string, isProOnly: boolean) => {
-    const available = !isProOnly || plan === 'pro'
-    return (
-      <div className="flex items-center space-x-2">
-        {available ? (
-          <CheckCircle className="text-green-500 w-4 h-4" />
-        ) : (
-          <Lock className="text-gray-400 w-4 h-4" />
-        )}
-        <span className={`${available ? 'text-gray-800' : 'text-gray-400'} text-sm`}>
-          {feature}
-        </span>
-      </div>
-    )
+  const handleExport = (type: 'pdf' | 'docx') => {
+    if (type === 'pdf') generatePDF(cleanedText)
+    else generateDocx(cleanedText)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="p-6 w-full max-w-lg text-center border rounded-2xl shadow-md bg-white">
-        <h2 className="text-2xl font-bold mb-2 text-gray-900">
-          Your Plan: {plan.toUpperCase()}
-        </h2>
-        <p className="text-gray-500 mb-6 text-sm">
-          {plan === 'free'
-            ? 'You’re using the Free Plan. Unlock AI formatting and faster downloads by upgrading to Pro.'
-            : 'You are on the Pro Plan — enjoy all premium features!'}
-        </p>
-
-        <div className="space-y-3 text-left mb-6">
-          {renderFeature('Basic document export', false)}
-          {renderFeature('AI-powered formatting (Pro)', true)}
-          {renderFeature('Faster file downloads (Pro)', true)}
-          {renderFeature('Email support', false)}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-md p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold">CleanDoc Dashboard</h1>
+          <button
+            onClick={() => router.push('/')}
+            className="text-sm text-gray-500 hover:text-gray-800"
+          >
+            Logout
+          </button>
         </div>
 
-        {plan === 'free' ? (
-          <motion.div whileTap={{ scale: 0.95 }}>
-            <Button
-              onClick={handleUpgradeClick}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold"
+        {/* Plan Notice */}
+        {plan === 'free' && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
+            <p className="text-sm text-yellow-800">
+              You’re using the <strong>Free Plan.</strong> Unlock AI formatting and faster downloads by upgrading to Pro.
+            </p>
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
             >
               Upgrade to Pro
-            </Button>
-          </motion.div>
-        ) : (
-          <Button disabled className="w-full bg-gray-300 text-gray-700 font-semibold">
-            You’re on Pro
-          </Button>
+            </button>
+          </div>
         )}
 
-        <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-          <DialogContent className="sm:max-w-md text-left">
-            <DialogHeader>
-              <DialogTitle>Upgrade to Pro</DialogTitle>
-              <DialogDescription>
-                Get full access to AI formatting, faster downloads, and more.
-              </DialogDescription>
-            </DialogHeader>
+        {/* Text Areas */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Messy Text</h2>
+            <textarea
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              className="w-full h-64 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              placeholder="Paste your messy text here..."
+            />
+          </div>
 
-            <div className="my-4">
-              <h3 className="text-lg font-semibold mb-1">Pro Plan - $10/month</h3>
-              <p className="text-gray-600 text-sm">Billed monthly, cancel anytime.</p>
-            </div>
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Clean Output</h2>
+            <textarea
+              value={cleanedText}
+              readOnly
+              className="w-full h-64 p-3 border border-gray-300 bg-gray-50 rounded-lg focus:outline-none"
+              placeholder="Cleaned text will appear here..."
+            />
+          </div>
+        </div>
 
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleConfirmPayment}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
-              >
-                Confirm Payment
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Actions */}
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <button
+            onClick={handleClean}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium"
+          >
+            Clean Text
+          </button>
+
+          <button
+            onClick={() => handleExport('pdf')}
+            className="bg-gray-700 hover:bg-gray-800 text-white px-5 py-2 rounded-lg font-medium"
+          >
+            Export PDF
+          </button>
+
+          <button
+            onClick={() => handleExport('docx')}
+            className="bg-gray-700 hover:bg-gray-800 text-white px-5 py-2 rounded-lg font-medium"
+          >
+            Export DOCX
+          </button>
+
+          {/* Only Pro users can use AI formatting */}
+          {plan === 'pro' && (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isAIFormat}
+                onChange={(e) => setIsAIFormat(e.target.checked)}
+                className="w-4 h-4"
+              />
+              Use AI formatting (Pro)
+            </label>
+          )}
+        </div>
       </div>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 shadow-lg w-full max-w-md text-center">
+            <h2 className="text-xl font-semibold mb-3">Upgrade to Pro</h2>
+            <p className="text-gray-600 mb-6">
+              Unlock advanced AI formatting, instant downloads, and priority support.
+            </p>
+
+            <button
+              onClick={() => alert('🧾 Payment flow coming soon...')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium w-full"
+            >
+              Proceed to Payment
+            </button>
+
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className="mt-4 text-gray-500 hover:text-gray-700 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
