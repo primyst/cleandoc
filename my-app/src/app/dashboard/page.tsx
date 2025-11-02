@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { generateDocx } from '@/lib/exportDoc'
 import { generatePDF } from '@/lib/pdfExport'
-import { cleanText } from '@/lib/cleanText'
+import { cleanText } from '@/utils/cleanText'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
