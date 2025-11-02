@@ -19,9 +19,9 @@ export default function Dashboard() {
   const [docs, setDocs] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isPremium, setIsPremium] = useState(true) // temporary Pro access
+  const [plan, setPlan] = useState<'free' | 'pro'>('free') // ✅ user plan state
 
-  // Check user session
+  // ✅ Check user session
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession()
@@ -29,6 +29,7 @@ export default function Dashboard() {
         setUser(data.session.user)
         setIsChecking(false)
         loadHistory(data.session.user.id)
+        fetchUserPlan(data.session.user.id) // ✅ Fetch plan
       } else {
         router.push('/')
       }
@@ -36,26 +37,43 @@ export default function Dashboard() {
     checkSession()
   }, [router])
 
-  // Load user documents
+  // ✅ Load user documents
   const loadHistory = async (userId: string) => {
     const userDocs = await getUserDocuments(userId)
     setDocs(userDocs)
   }
 
-  // Logout
+  // ✅ Fetch user’s subscription plan from Supabase
+  const fetchUserPlan = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching plan:', error.message)
+      setPlan('free')
+      return
+    }
+
+    setPlan(data?.plan || 'free')
+  }
+
+  // ✅ Logout
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
   }
 
-  // Clean text
+  // ✅ Clean text
   const handleClean = async () => {
     if (!rawText.trim()) return
     setIsLoading(true)
 
     let result = rawText
 
-    if (isAIFormat && isPremium) {
+    if (isAIFormat && plan === 'pro') {
       const res = await fetch('/api/ai-format', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,7 +89,7 @@ export default function Dashboard() {
     setIsLoading(false)
   }
 
-  // Generate DOCX
+  // ✅ Download DOCX
   const handleDownloadDocx = async () => {
     if (!cleaned) return
     setIsGenerating(true)
@@ -91,7 +109,7 @@ export default function Dashboard() {
     setIsGenerating(false)
   }
 
-  // Generate PDF
+  // ✅ Download PDF
   const handleDownloadPDF = async () => {
     if (!cleaned) return
     setIsGenerating(true)
@@ -111,6 +129,7 @@ export default function Dashboard() {
     setIsGenerating(false)
   }
 
+  // ✅ Still checking session
   if (isChecking) {
     return (
       <div className="flex items-center justify-center h-screen bg-stone-50">
@@ -119,18 +138,41 @@ export default function Dashboard() {
     )
   }
 
+  // ✅ Dashboard UI
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 px-8 py-12 max-w-5xl mx-auto">
       {/* Header */}
       <header className="flex justify-between items-center mb-12">
         <h1 className="text-2xl font-semibold">CleanDoc Dashboard</h1>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-lg"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-4">
+          <span
+            className={`px-3 py-1 text-sm rounded-full ${
+              plan === 'pro' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+            }`}
+          >
+            {plan === 'pro' ? 'Pro User' : 'Free Plan'}
+          </span>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-lg"
+          >
+            Logout
+          </button>
+        </div>
       </header>
+
+      {/* Upgrade Banner */}
+      {plan === 'free' && (
+        <div className="p-4 mb-8 bg-gradient-to-r from-yellow-100 to-yellow-50 border border-yellow-300 rounded-lg">
+          <p className="text-yellow-800">
+            You’re using the <strong>Free Plan</strong>. Unlock AI formatting and faster downloads
+            by upgrading to <strong>Pro</strong>.
+          </p>
+          <button className="mt-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg">
+            Upgrade to Pro
+          </button>
+        </div>
+      )}
 
       {/* Text cleaner */}
       <section className="mb-12 space-y-4">
@@ -147,7 +189,7 @@ export default function Dashboard() {
               type="checkbox"
               checked={isAIFormat}
               onChange={(e) => setIsAIFormat(e.target.checked)}
-              disabled={!isPremium}
+              disabled={plan !== 'pro'}
             />
             Use AI formatting (Pro)
           </label>
