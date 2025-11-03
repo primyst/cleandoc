@@ -3,64 +3,71 @@ export default function cleanTextPro(input: string, forExport = false): string {
 
   let text = input.trim();
 
-  // Normalize whitespace and punctuation
+  // Normalize whitespace and remove excess line breaks
   text = text.replace(/\r/g, '');
   text = text.replace(/\s+/g, ' ');
-  text = text.replace(/([.,!?])(?=[^\s])/g, '$1 ');
+  text = text.replace(/\s*([.,!?;:])\s*/g, '$1 ');
+  text = text.replace(/\s{2,}/g, ' ');
+
+  // Fix repeated punctuation and ellipses
   text = text.replace(/([!?]){2,}/g, '$1');
   text = text.replace(/\.{3,}/g, '...');
 
-  // Capitalize first letters
-  text = text.replace(/(^\s*\w|[.!?]\s*\w)/g, (c) => c.toUpperCase());
+  // Ensure space after punctuation
+  text = text.replace(/([.!?])(?=\w)/g, '$1 ');
 
-  // Fix lowercase “i”
+  // Capitalize first letters after sentence endings
+  text = text.replace(/(^\s*\w|[.!?]\s*\w)/g, (match) => match.toUpperCase());
+
+  // Fix lowercase "i" when used as pronoun
   text = text.replace(/\bi\s/g, 'I ');
 
-  // Expand contractions
+  // Expand common contractions
   const contractions: Record<string, string> = {
-    "can't": 'cannot',
-    "won't": 'will not',
-    "i'm": 'I am',
-    "it's": 'It is',
-    "doesn't": 'does not',
-    "don't": 'do not',
-    "they're": 'they are',
-    "we're": 'we are',
+    "can't": "cannot",
+    "won't": "will not",
+    "i'm": "I am",
+    "it's": "It is",
+    "doesn't": "does not",
+    "don't": "do not",
+    "they're": "they are",
+    "we're": "we are",
   };
   for (const [key, value] of Object.entries(contractions)) {
     const regex = new RegExp(`\\b${key}\\b`, 'gi');
     text = text.replace(regex, value);
   }
 
-  // Remove unwanted symbols (keep expressive emojis)
+  // Remove unwanted or repeated symbols
   text = text.replace(/[☢️⚡🧿💫]/g, '');
+  text = text.replace(/([.,!?])\1+/g, '$1');
 
-  // Split into sentences/sections
-  const lines = text.split(/(?<=\.\s)/);
+  // Split into sections by sentence or colon
+  const sections = text.split(/(?<=[.!?])\s+|(?<=:)\s*/);
   const formatted: string[] = [];
 
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) continue;
+  for (let part of sections) {
+    part = part.trim();
+    if (!part) continue;
 
     const isHeader =
-      (/^[A-Z0-9 ,.'"()_-]+$/.test(line) && line.split(' ').length <= 6) ||
-      line.endsWith(':');
+      (/^[A-Z0-9 ,.'"()_-]+$/.test(part) && part.split(' ').length <= 6) ||
+      part.endsWith(':');
 
     if (isHeader) {
       if (forExport) {
-        formatted.push(`\n### ${line.charAt(0).toUpperCase() + line.slice(1).toLowerCase()}\n`);
+        formatted.push(`\n### ${part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()}\n`);
       } else {
-        formatted.push(`**${line.charAt(0).toUpperCase() + line.slice(1)}**`);
+        formatted.push(`**${part.charAt(0).toUpperCase() + part.slice(1)}**`);
       }
     } else {
-      formatted.push(line);
+      formatted.push(part);
     }
   }
 
   text = formatted.join('\n\n');
 
-  // Remove repeated words
+  // Remove repeated words like "the the"
   text = text.replace(/\b(\w+)\s+\1\b/gi, '$1');
 
   // Highlight important keywords
@@ -75,11 +82,14 @@ export default function cleanTextPro(input: string, forExport = false): string {
   }
 
   // Highlight emails, numbers, and currency
-  text = text.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '**$1**');
+  text = text.replace(
+    /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+    '**$1**'
+  );
   text = text.replace(/\b\d{4,}\b/g, (num) => `**${num}**`);
-  text = text.replace(/\b(\$|₦|€|£)\d+(\.\d{1,2})?\b/g, (m) => `**${m}**`);
+  text = text.replace(/\b(₦|\$|€|£)\s*\d+(\.\d{1,2})?\b/g, (m) => `**${m}**`);
 
-  // Add paragraph breaks for readability
+  // Insert paragraph breaks for readability
   text = text.replace(/([.!?])\s+/g, '$1\n\n');
 
   // Final polish
