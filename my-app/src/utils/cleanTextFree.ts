@@ -1,10 +1,12 @@
 export function cleanTextFree(input: string): string {
   if (!input) return '';
 
-  let cleaned = input;
-
-  // Step 1: Trim and normalize spaces
-  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  // Step 1: Preserve paragraph structure while trimming
+  let cleaned = input
+    .split('\n')
+    .map(line => line.trim().replace(/\s+/g, ' '))
+    .filter(Boolean)
+    .join('\n\n'); // keep double line breaks between paragraphs
 
   // Step 2: Remove emojis and unusual symbols
   cleaned = cleaned.replace(
@@ -20,17 +22,17 @@ export function cleanTextFree(input: string): string {
     cleaned += '.';
   }
 
-  // Step 5: Capitalize first letters of sentences (basic)
+  // Step 5: Capitalize first letters of sentences
   cleaned = cleaned.replace(/(^\s*\w|[.!?]\s*\w)/g, (c) => c.toUpperCase());
 
   // Step 6: Fix lowercase “i” pronouns
   cleaned = cleaned.replace(/\bi\s/g, 'I ');
 
-  // Step 7: Limit to 300 words for free users
+  // Step 7: Limit to 300 words
   const words = cleaned.split(/\s+/);
   if (words.length > 300) {
     cleaned = words.slice(0, 300).join(' ') + '...';
   }
 
-  return cleaned;
+  return cleaned.trim();
 }
