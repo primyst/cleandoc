@@ -1,38 +1,34 @@
 export function cleanTextFree(input: string): string {
   if (!input) return '';
 
-  // Step 1: Preserve paragraph structure while trimming
-  let cleaned = input
-    .split('\n')
-    .map(line => line.trim().replace(/\s+/g, ' '))
-    .filter(Boolean)
-    .join('\n\n'); // keep double line breaks between paragraphs
+  let cleaned = input.trim();
 
-  // Step 2: Remove emojis and unusual symbols
+  // 1️⃣ Normalize spaces and punctuation
+  cleaned = cleaned.replace(/\r/g, '');
+  cleaned = cleaned.replace(/\s+/g, ' ');
+  cleaned = cleaned.replace(/\s([.,!?;:])/g, '$1');
+
+  // 2️⃣ Basic capitalization and sentence fix
+  cleaned = cleaned.replace(/(^\s*\w|[.!?]\s*\w)/g, (c) => c.toUpperCase());
+
+  // 3️⃣ Fix lowercase “i” pronouns
+  cleaned = cleaned.replace(/\bi\s/g, 'I ');
+
+  // 4️⃣ Remove unwanted characters/emojis
   cleaned = cleaned.replace(
     /[^\w\s.,!?'"()\-–—:;@#%&*[\]{}<>/=+\\|^$~`]/g,
     ''
   );
 
-  // Step 3: Fix spacing before punctuation
-  cleaned = cleaned.replace(/\s([.,!?;:])/g, '$1');
+  // 5️⃣ Ensure sentence ends with punctuation
+  if (!/[.!?]$/.test(cleaned)) cleaned += '.';
 
-  // Step 4: Ensure sentence ends have proper punctuation
-  if (!/[.!?]$/.test(cleaned)) {
-    cleaned += '.';
-  }
-
-  // Step 5: Capitalize first letters of sentences
-  cleaned = cleaned.replace(/(^\s*\w|[.!?]\s*\w)/g, (c) => c.toUpperCase());
-
-  // Step 6: Fix lowercase “i” pronouns
-  cleaned = cleaned.replace(/\bi\s/g, 'I ');
-
-  // Step 7: Limit to 300 words
+  // 6️⃣ Limit output length for Free users
   const words = cleaned.split(/\s+/);
-  if (words.length > 300) {
-    cleaned = words.slice(0, 300).join(' ') + '...';
-  }
+  if (words.length > 300) cleaned = words.slice(0, 300).join(' ') + '...';
+
+  // 7️⃣ Add simple paragraph breaks for long text
+  cleaned = cleaned.replace(/([.!?])\s+/g, '$1\n\n');
 
   return cleaned.trim();
 }
