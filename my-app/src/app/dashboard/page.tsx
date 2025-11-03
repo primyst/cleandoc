@@ -1,132 +1,178 @@
 'use client'
 
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
+import { cleanTextByPlan } from '@/utils/cleanTextByPlan'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { CheckCircle, Lock, CreditCard, Banknote, Globe } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Loader2, CheckCircle2, Lock } from 'lucide-react'
 
-type Plan = 'free' | 'pro'
-type PaymentMethod = 'paystack' | 'stripe' | 'flutterwave'
+export default function DashboardPage() {
+  const router = useRouter()
 
-export default function SubscriptionSection() {
-  const [plan, setPlan] = useState<Plan>('free')
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('paystack')
+  const [user, setUser] = useState<any>(null)
+  const [plan, setPlan] = useState<'free' | 'pro'>('free')
+  const [inputText, setInputText] = useState('')
+  const [cleanedText, setCleanedText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
-  const handleUpgradeClick = () => {
-    setShowPaymentModal(true)
+  // ✅ Fetch user info and plan
+  useEffect(() => {
+    const getUser = async () => {
+      const { data, error } = await supabase.auth.getUser()
+      if (error || !data?.user) {
+        router.push('/')
+        return
+      }
+
+      setUser(data.user)
+
+      // Fetch user plan (from profiles table ideally)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', data.user.id)
+        .single()
+
+      setPlan(profile?.plan === 'pro' ? 'pro' : 'free')
+    }
+
+    getUser()
+  }, [router])
+
+  // 🧹 Clean text action
+  const handleClean = () => {
+    setLoading(true)
+    setTimeout(() => {
+      const result = cleanTextByPlan(inputText, plan)
+      setCleanedText(result)
+      setLoading(false)
+    }, 300)
   }
 
-  const handleConfirmPayment = () => {
-    // Later: integrate your real payment API here (Paystack, Stripe, etc.)
-    setPlan('pro')
-    setShowPaymentModal(false)
+  // 💳 Fake Upgrade Modal (for now)
+  const handleUpgrade = () => {
+    setShowUpgrade(true)
   }
 
-  const renderFeature = (feature: string, isProOnly: boolean) => {
-    const available = !isProOnly || plan === 'pro'
-    return (
-      <div className="flex items-center space-x-2">
-        {available ? (
-          <CheckCircle className="text-green-500 w-4 h-4" />
-        ) : (
-          <Lock className="text-gray-400 w-4 h-4" />
-        )}
-        <span className={`${available ? 'text-gray-800' : 'text-gray-400'}`}>{feature}</span>
-      </div>
-    )
-  }
+  const closeUpgradeModal = () => setShowUpgrade(false)
 
   return (
-    <div className="p-6 max-w-lg mx-auto text-center border rounded-2xl shadow-sm bg-white">
-      <h2 className="text-2xl font-bold mb-2">Your Plan: {plan.toUpperCase()}</h2>
-      <p className="text-gray-500 mb-6">
-        {plan === 'free'
-          ? 'You’re using the Free Plan. Unlock AI formatting and faster downloads by upgrading to Pro.'
-          : 'You are on the Pro Plan — enjoy all premium features!'}
-      </p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* 🧭 Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Hi, {user?.user_metadata?.full_name || 'User'} 👋
+            </h1>
+            <p className="text-sm text-gray-500">
+              You’re on the <span className="font-semibold">{plan.toUpperCase()}</span> Plan
+            </p>
+          </div>
 
-      <div className="space-y-3 text-left">
-        {renderFeature('Basic document export', false)}
-        {renderFeature('AI-powered formatting (Pro)', true)}
-        {renderFeature('Faster file downloads (Pro)', true)}
-        {renderFeature('Email support', false)}
+          {plan === 'free' && (
+            <Button onClick={handleUpgrade} className="bg-black text-white">
+              Upgrade to Pro
+            </Button>
+          )}
+        </div>
+
+        {/* ✍️ Input Section */}
+        <Card>
+          <CardContent className="p-4">
+            <textarea
+              className="w-full h-40 p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              placeholder="Paste your messy text here..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+            />
+            <div className="mt-3 flex justify-end">
+              <Button onClick={handleClean} disabled={loading || !inputText}>
+                {loading && <Loader2 className="animate-spin mr-2" size={16} />}
+                Clean Text
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ✨ Cleaned Output */}
+        {cleanedText && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <h2 className="text-lg font-semibold text-gray-800">🧾 Cleaned Text</h2>
+              <pre className="bg-gray-100 p-3 rounded-md text-sm whitespace-pre-wrap">
+                {cleanedText}
+              </pre>
+              {plan === 'free' && (
+                <div className="text-center text-sm text-gray-500 border-t pt-3">
+                  You’re on the Free Plan — unlock <b>AI Formatting</b>, <b>Smart Headers</b>, and
+                  <b> Long Text Support</b> by upgrading to Pro.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 💎 Plan Benefits */}
+        <Card className="mt-10 border-2 border-gray-200">
+          <CardContent className="p-6">
+            <h3 className="text-xl font-bold mb-4 text-gray-800">✨ Plan Comparison</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Free Plan */}
+              <div className="border rounded-lg p-4 bg-white">
+                <h4 className="font-semibold text-lg mb-3">🆓 Free Plan</h4>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Basic text cleaning</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Removes emojis & symbols</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Capitalizes sentences</li>
+                  <li className="flex items-center gap-2"><Lock size={16} /> Limited to 300 words</li>
+                  <li className="flex items-center gap-2"><Lock size={16} /> No AI formatting</li>
+                </ul>
+              </div>
+
+              {/* Pro Plan */}
+              <div className="border rounded-lg p-4 bg-gradient-to-br from-gray-900 to-gray-700 text-white">
+                <h4 className="font-semibold text-lg mb-3">🚀 Pro Plan</h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Smart paragraph and header detection</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Expands contractions & fixes grammar</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Highlights keywords & emails</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Removes duplicates & cleans deeply</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 size={16} /> No word limit</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {plan === 'free' ? (
-        <motion.div whileTap={{ scale: 0.95 }} className="mt-6">
-          <Button onClick={handleUpgradeClick} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold">
-            Upgrade to Pro
-          </Button>
-        </motion.div>
-      ) : (
-        <motion.div whileTap={{ scale: 0.95 }} className="mt-6">
-          <Button disabled className="w-full bg-gray-300 text-gray-700 font-semibold">
-            You’re on Pro
-          </Button>
-        </motion.div>
-      )}
-
-      {/* Payment Modal */}
-      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="sm:max-w-md text-left">
-          <DialogHeader>
-            <DialogTitle>Upgrade to Pro</DialogTitle>
-            <DialogDescription>
-              Choose your preferred payment method to unlock Pro features.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="my-4">
-            <h3 className="text-lg font-semibold mb-1">Pro Plan - $10/month</h3>
-            <p className="text-gray-600 text-sm mb-4">Billed monthly, cancel anytime.</p>
-
-            <Tabs defaultValue="paystack" onValueChange={(v) => setSelectedPayment(v as PaymentMethod)}>
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="paystack" className="flex items-center justify-center space-x-2">
-                  <Banknote className="w-4 h-4" /> <span>Paystack</span>
-                </TabsTrigger>
-                <TabsTrigger value="stripe" className="flex items-center justify-center space-x-2">
-                  <CreditCard className="w-4 h-4" /> <span>Stripe</span>
-                </TabsTrigger>
-                <TabsTrigger value="flutterwave" className="flex items-center justify-center space-x-2">
-                  <Globe className="w-4 h-4" /> <span>Flutterwave</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="paystack">
-                <p className="text-sm text-gray-600 mb-3">
-                  Secure local payments in NGN via card, bank transfer, or USSD.
-                </p>
-              </TabsContent>
-              <TabsContent value="stripe">
-                <p className="text-sm text-gray-600 mb-3">
-                  International payments using Visa, Mastercard, or Apple Pay.
-                </p>
-              </TabsContent>
-              <TabsContent value="flutterwave">
-                <p className="text-sm text-gray-600 mb-3">
-                  Supports African currencies and multiple payment channels.
-                </p>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="flex justify-between items-center mt-4">
-            <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
+      {/* 💳 Upgrade Modal */}
+      {showUpgrade && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full text-center space-y-4">
+            <h2 className="text-xl font-bold">Upgrade to CleanDoc Pro ✨</h2>
+            <p className="text-sm text-gray-600">
+              Unlock AI-powered formatting, longer text support, and professional polish for all your documents.
+            </p>
+            <div className="border rounded-lg p-4 bg-gray-50 text-sm text-gray-700 space-y-1">
+              <p>✅ AI Formatting</p>
+              <p>✅ Unlimited text cleaning</p>
+              <p>✅ Smart header & bullet detection</p>
+              <p>✅ Keyword highlighting</p>
+              <p>✅ Priority support</p>
+            </div>
+            <Button className="w-full bg-black text-white py-2 rounded-md">
+              Continue to Payment
+            </Button>
+            <button onClick={closeUpgradeModal} className="text-gray-500 text-sm underline">
               Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmPayment}
-              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
-            >
-              Pay with {selectedPayment.charAt(0).toUpperCase() + selectedPayment.slice(1)}
-            </Button>
+            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   )
 }
