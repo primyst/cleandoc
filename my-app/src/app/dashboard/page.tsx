@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { cleanTextByPlan } from '@/utils/cleanText'
+import { cleanTextPro } from '@/utils/cleanText'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, CheckCircle2, Lock, LogOut } from 'lucide-react'
+import { Loader2, LogOut } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const handleClean = () => {
     setLoading(true)
     setTimeout(() => {
-      const result = cleanTextByPlan(inputText, plan)
+      const result = cleanTextPro(inputText, false) // false = dashboard view
       setCleanedText(result)
       setLoading(false)
     }, 300)
@@ -122,12 +122,14 @@ export default function DashboardPage() {
         {cleanedText && (
           <Card className="shadow-sm border border-gray-200">
             <CardContent className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-800">🧾 Cleaned Text</h2>
+              <h2 className="text-lg font-semibold text-gray-800">🧾 Cleaned Text</h2>
+              <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {cleanedText.split('\n\n').map((line, idx) => (
+                  <p key={idx} className={line.startsWith('**') ? 'font-bold' : ''}>
+                    {line.replace(/\*\*/g, '')}
+                  </p>
+                ))}
               </div>
-              <pre className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {cleanedText}
-              </pre>
               {plan === 'free' && (
                 <div className="text-center text-sm text-gray-500 border-t pt-3">
                   You’re on the Free Plan — unlock <b>AI Formatting</b>, <b>Smart Headers</b>, and
@@ -137,46 +139,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Plan Comparison */}
-        <section>
-          <h3 className="text-2xl font-bold mb-5 text-gray-800">💎 Plan Comparison</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Free Plan */}
-            <div className="bg-white rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200">
-              <h4 className="font-semibold text-lg mb-4">🆓 Free Plan</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Basic text cleaning</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Removes emojis & symbols</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Capitalizes sentences</li>
-                <li className="flex items-center gap-2 text-gray-400"><Lock size={16} /> Limited to 300 words</li>
-                <li className="flex items-center gap-2 text-gray-400"><Lock size={16} /> No AI formatting</li>
-              </ul>
-              {plan === 'free' && (
-                <div className="mt-4 text-center">
-                  <Button
-                    onClick={handleUpgrade}
-                    className="bg-black text-white px-4 py-2 rounded-md shadow-sm hover:bg-gray-900 transition-all"
-                  >
-                    Upgrade Now
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Pro Plan */}
-            <div className="rounded-xl p-6 bg-gradient-to-br from-gray-900 to-gray-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
-              <h4 className="font-semibold text-lg mb-4">🚀 Pro Plan</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Smart paragraph & header detection</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Expands contractions & fixes grammar</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Highlights keywords & emails</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Removes duplicates & cleans deeply</li>
-                <li className="flex items-center gap-2"><CheckCircle2 size={16} /> No word limit</li>
-              </ul>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Upgrade Modal */}
