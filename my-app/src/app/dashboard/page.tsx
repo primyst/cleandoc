@@ -10,7 +10,6 @@ import { Loader2, CheckCircle2, Lock, LogOut } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
-
   const [user, setUser] = useState<any>(null)
   const [plan, setPlan] = useState<'free' | 'pro'>('free')
   const [inputText, setInputText] = useState('')
@@ -18,7 +17,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
-  // ✅ Fetch user info
+  // Fetch user info
   useEffect(() => {
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser()
@@ -39,7 +38,7 @@ export default function DashboardPage() {
     getUser()
   }, [router])
 
-  // 🧹 Handle clean
+  // Handle clean
   const handleClean = () => {
     setLoading(true)
     setTimeout(() => {
@@ -49,11 +48,11 @@ export default function DashboardPage() {
     }, 300)
   }
 
-  // 💳 Upgrade
+  // Upgrade modal
   const handleUpgrade = () => setShowUpgrade(true)
   const closeUpgradeModal = () => setShowUpgrade(false)
 
-  // 🚪 Logout
+  // Logout
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
@@ -61,9 +60,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Fixed header */}
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
           <div>
             <h1 className="text-xl font-bold text-gray-800">
               Hi, {user?.user_metadata?.full_name || 'User'} 👋
@@ -73,11 +72,11 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
             {plan === 'free' && (
               <Button
                 onClick={handleUpgrade}
-                className="bg-gradient-to-r from-black to-gray-800 text-white shadow-sm"
+                className="bg-gradient-to-r from-black to-gray-800 text-white shadow-sm hover:from-gray-900 hover:to-gray-700 transition-all"
               >
                 Upgrade to Pro
               </Button>
@@ -85,7 +84,7 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               onClick={handleLogout}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 hover:bg-gray-100 transition-all"
             >
               <LogOut size={16} />
               Logout
@@ -95,31 +94,31 @@ export default function DashboardPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-5xl mx-auto px-6 py-10 space-y-8">
-        {/* Input */}
-        <Card className="shadow-sm">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-3 text-gray-800">📝 Enter Your Text</h2>
+      <main className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+        {/* Input Section */}
+        <Card className="shadow-sm hover:shadow-md transition-all duration-200">
+          <CardContent className="p-6 flex flex-col gap-4">
+            <h2 className="text-lg font-semibold text-gray-800">📝 Enter Your Text</h2>
             <textarea
-              className="w-full h-48 p-4 border rounded-lg bg-white focus:ring-2 focus:ring-black focus:outline-none text-gray-700 placeholder:text-gray-400"
+              className="w-full h-48 p-4 border rounded-lg bg-white focus:ring-2 focus:ring-black focus:outline-none text-gray-700 placeholder:text-gray-400 resize-none"
               placeholder="Paste your messy text here..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
             />
-            <div className="mt-4 flex justify-end">
+            <div className="flex justify-end">
               <Button
                 onClick={handleClean}
                 disabled={loading || !inputText}
-                className="px-6 py-2 bg-black text-white hover:bg-gray-900 transition-all"
+                className="px-6 py-2 bg-black text-white hover:bg-gray-900 transition-all flex items-center justify-center gap-2"
               >
-                {loading && <Loader2 className="animate-spin mr-2" size={16} />}
+                {loading && <Loader2 className="animate-spin" size={16} />}
                 Clean Text
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Output */}
+        {/* Output Section */}
         {cleanedText && (
           <Card className="shadow-sm border border-gray-200">
             <CardContent className="p-6 space-y-4">
@@ -129,7 +128,6 @@ export default function DashboardPage() {
               <pre className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
                 {cleanedText}
               </pre>
-
               {plan === 'free' && (
                 <div className="text-center text-sm text-gray-500 border-t pt-3">
                   You’re on the Free Plan — unlock <b>AI Formatting</b>, <b>Smart Headers</b>, and
@@ -140,12 +138,12 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Plan comparison */}
+        {/* Plan Comparison */}
         <section>
           <h3 className="text-2xl font-bold mb-5 text-gray-800">💎 Plan Comparison</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Free */}
-            <div className="bg-white rounded-xl border p-6 shadow-sm hover:shadow-md transition">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Free Plan */}
+            <div className="bg-white rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200">
               <h4 className="font-semibold text-lg mb-4">🆓 Free Plan</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Basic text cleaning</li>
@@ -154,10 +152,20 @@ export default function DashboardPage() {
                 <li className="flex items-center gap-2 text-gray-400"><Lock size={16} /> Limited to 300 words</li>
                 <li className="flex items-center gap-2 text-gray-400"><Lock size={16} /> No AI formatting</li>
               </ul>
+              {plan === 'free' && (
+                <div className="mt-4 text-center">
+                  <Button
+                    onClick={handleUpgrade}
+                    className="bg-black text-white px-4 py-2 rounded-md shadow-sm hover:bg-gray-900 transition-all"
+                  >
+                    Upgrade Now
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {/* Pro */}
-            <div className="rounded-xl p-6 bg-gradient-to-br from-gray-900 to-gray-700 text-white shadow-md hover:shadow-lg transition">
+            {/* Pro Plan */}
+            <div className="rounded-xl p-6 bg-gradient-to-br from-gray-900 to-gray-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
               <h4 className="font-semibold text-lg mb-4">🚀 Pro Plan</h4>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Smart paragraph & header detection</li>
@@ -166,14 +174,6 @@ export default function DashboardPage() {
                 <li className="flex items-center gap-2"><CheckCircle2 size={16} /> Removes duplicates & cleans deeply</li>
                 <li className="flex items-center gap-2"><CheckCircle2 size={16} /> No word limit</li>
               </ul>
-              <div className="mt-6 text-center">
-                <Button
-                  onClick={handleUpgrade}
-                  className="w-full bg-white text-gray-900 hover:bg-gray-100 transition"
-                >
-                  Upgrade Now
-                </Button>
-              </div>
             </div>
           </div>
         </section>
@@ -182,7 +182,7 @@ export default function DashboardPage() {
       {/* Upgrade Modal */}
       {showUpgrade && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-lg animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-lg animate-in fade-in scale-in duration-200">
             <h2 className="text-2xl font-bold text-gray-800 text-center">
               Upgrade to CleanDoc Pro ✨
             </h2>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
               <p>✅ Keyword highlighting</p>
               <p>✅ Priority support</p>
             </div>
-            <Button className="w-full bg-black text-white py-2 rounded-md">
+            <Button className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-900 transition-all">
               Continue to Payment
             </Button>
             <button
