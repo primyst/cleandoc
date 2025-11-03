@@ -100,7 +100,7 @@ export default function DashboardPage() {
           <CardContent className="p-6 flex flex-col gap-4">
             <h2 className="text-lg font-semibold text-gray-800">📝 Enter Your Text</h2>
             <textarea
-              className="w-full h-48 p-4 border rounded-lg bg-white focus:ring-2 focus:ring-black focus:outline-none text-gray-700 placeholder:text-gray-400 resize-none"
+              className="w-full h-48 md:h-64 p-4 border rounded-lg bg-white focus:ring-2 focus:ring-black focus:outline-none text-gray-700 placeholder:text-gray-400 resize-none overflow-auto"
               placeholder="Paste your messy text here..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           <Card className="shadow-sm border border-gray-200">
             <CardContent className="p-6 space-y-4">
               <h2 className="text-lg font-semibold text-gray-800">🧾 Cleaned Text</h2>
-              <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+              <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
                 {cleanedText.split('\n\n').map((line, idx) => (
                   <p key={idx} className={line.startsWith('**') ? 'font-bold' : ''}>
                     {line.replace(/\*\*/g, '')}
