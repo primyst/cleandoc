@@ -1,4 +1,4 @@
-export function cleanTextPro(input: string): string {
+export function cleanTextPro(input: string, forExport = false): string {
   if (!input) return '';
 
   let text = input.trim();
@@ -7,7 +7,7 @@ export function cleanTextPro(input: string): string {
   text = text.replace(/\r/g, '');
   text = text.replace(/\s+/g, ' ');
 
-  // Space after punctuation if missing
+  // Ensure space after punctuation if missing
   text = text.replace(/([.,!?])(?=[^\s])/g, '$1 ');
 
   // Fix multiple punctuation
@@ -39,7 +39,7 @@ export function cleanTextPro(input: string): string {
   // Remove unwanted symbols (keep expressive emojis)
   text = text.replace(/[☢️⚡🧿💫]/g, '');
 
-  // Split into lines for headers/bullets
+  // Split into sentences/lines for formatting
   const lines = text.split(/(?<=\.\s)/);
   const formatted: string[] = [];
 
@@ -47,10 +47,19 @@ export function cleanTextPro(input: string): string {
     line = line.trim();
     if (!line) continue;
 
-    if ((/^[A-Z0-9 ,.'"()_-]+$/.test(line) && line.split(' ').length <= 6) || line.endsWith(':')) {
-      formatted.push(`\n### ${line.charAt(0).toUpperCase() + line.slice(1).toLowerCase()}\n`);
+    // Header detection (short uppercase lines or ends with colon)
+    const isHeader = (/^[A-Z0-9 ,.'"()_-]+$/.test(line) && line.split(' ').length <= 6) || line.endsWith(':');
+
+    if (isHeader) {
+      if (forExport) {
+        // Markdown headers for DOCX/PDF export
+        formatted.push(`\n### ${line.charAt(0).toUpperCase() + line.slice(1).toLowerCase()}\n`);
+      } else {
+        // Bold headers for dashboard view
+        formatted.push(`**${line.charAt(0).toUpperCase() + line.slice(1)}**`);
+      }
     } else if (/^[-*•]\s+/.test(line)) {
-      formatted.push(line);
+      formatted.push(line); // Keep bullets
     } else {
       formatted.push(line);
     }
