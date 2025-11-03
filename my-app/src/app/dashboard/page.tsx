@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { cleanTextPro } from '@/utils/cleanText'
+import cleanTextPro from '@/utils/cleanTextPro' // ✅ Default import
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, LogOut } from 'lucide-react'
@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
-  // Fetch user info
+  // ✅ Fetch user info
   useEffect(() => {
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser()
@@ -38,21 +38,17 @@ export default function DashboardPage() {
     getUser()
   }, [router])
 
-  // Handle clean
+  // ✅ Handle Clean
   const handleClean = () => {
     setLoading(true)
     setTimeout(() => {
-      const result = cleanTextPro(inputText, false) // false = dashboard view
+      const result = cleanTextPro(inputText, false)
       setCleanedText(result)
       setLoading(false)
     }, 300)
   }
 
-  // Upgrade modal
-  const handleUpgrade = () => setShowUpgrade(true)
-  const closeUpgradeModal = () => setShowUpgrade(false)
-
-  // Logout
+  // ✅ Logout
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
@@ -61,8 +57,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
+      <header className="sticky top-0 bg-white/70 backdrop-blur-md border-b border-gray-200 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-xl font-bold text-gray-800">
               Hi, {user?.user_metadata?.full_name || 'User'} 👋
@@ -72,10 +68,10 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-3">
             {plan === 'free' && (
               <Button
-                onClick={handleUpgrade}
+                onClick={() => setShowUpgrade(true)}
                 className="bg-gradient-to-r from-black to-gray-800 text-white shadow-sm hover:from-gray-900 hover:to-gray-700 transition-all"
               >
                 Upgrade to Pro
@@ -93,14 +89,14 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Main */}
       <main className="max-w-6xl mx-auto px-6 py-10 space-y-8">
-        {/* Input Section */}
+        {/* Input */}
         <Card className="shadow-sm hover:shadow-md transition-all duration-200">
           <CardContent className="p-6 flex flex-col gap-4">
             <h2 className="text-lg font-semibold text-gray-800">📝 Enter Your Text</h2>
             <textarea
-              className="w-full h-48 md:h-64 p-4 border rounded-lg bg-white focus:ring-2 focus:ring-black focus:outline-none text-gray-700 placeholder:text-gray-400 resize-none overflow-auto"
+              className="w-full h-48 md:h-64 p-4 border rounded-lg bg-white focus:ring-2 focus:ring-black focus:outline-none text-gray-700 placeholder:text-gray-400 resize-none"
               placeholder="Paste your messy text here..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -118,7 +114,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Output Section */}
+        {/* Output */}
         {cleanedText && (
           <Card className="shadow-sm border border-gray-200">
             <CardContent className="p-6 space-y-4">
@@ -130,6 +126,7 @@ export default function DashboardPage() {
                   </p>
                 ))}
               </div>
+
               {plan === 'free' && (
                 <div className="text-center text-sm text-gray-500 border-t pt-3">
                   You’re on the Free Plan — unlock <b>AI Formatting</b>, <b>Smart Headers</b>, and
@@ -162,7 +159,7 @@ export default function DashboardPage() {
               Continue to Payment
             </Button>
             <button
-              onClick={closeUpgradeModal}
+              onClick={() => setShowUpgrade(false)}
               className="block mx-auto text-gray-500 text-sm underline"
             >
               Cancel
