@@ -32,7 +32,7 @@ export function cleanTextPro(input: string): string {
     text = text.replace(regex, value);
   }
 
-  // 🧠 5. Smart paragraph and header detection
+  // 🧠 5. Smart paragraph + header detection
   const lines = text.split(/(?<=\n)|(?<=\.\s)/);
   const formatted: string[] = [];
 
@@ -40,15 +40,13 @@ export function cleanTextPro(input: string): string {
     line = line.trim();
     if (!line) continue;
 
-    // Only treat as header if it's short and uppercase or ends with a colon
+    // Treat as header if short and uppercase or ends with colon
     if ((/^[A-Z0-9 ,.'"()_-]+$/.test(line) && line.split(' ').length <= 6) || line.endsWith(':')) {
-      formatted.push(`\n## ${line.charAt(0).toUpperCase() + line.slice(1).toLowerCase()}\n`);
-    }
-    // Bullet-like line
+      formatted.push(`\n### ${line.charAt(0).toUpperCase() + line.slice(1).toLowerCase()}\n`);
+    } 
     else if (/^[-*•]\s+/.test(line)) {
-      formatted.push(line);
-    }
-    // Normal paragraph
+      formatted.push(line); // Keep bullets
+    } 
     else {
       formatted.push(line);
     }
@@ -59,28 +57,26 @@ export function cleanTextPro(input: string): string {
   // 🪶 6. Remove repeated words
   text = text.replace(/\b(\w+)\s+\1\b/gi, '$1');
 
-  // ✨ 7. Highlight important keywords
+  // ✨ 7. Highlight key terms
   const keywords = [
     'Name', 'Date', 'Email', 'Phone', 'Address', 'Amount', 'Price', 'Deadline',
-    'Signature', 'Department', 'Title', 'Reference', 'Subject', 'Note'
+    'Signature', 'Department', 'Title', 'Reference', 'Subject', 'Note', 'Terms', 'Agreement'
   ];
 
   for (const word of keywords) {
     const regex = new RegExp(`\\b(${word})\\b`, 'gi');
-    text = text.replace(regex, '**$1**'); // Markdown bold
+    text = text.replace(regex, '**$1**');
   }
 
-  // 🔢 8. Format emails and numbers
+  // 🔢 8. Format numbers, emails, and currency
   text = text.replace(
     /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
     '**$1**'
   );
-  text = text.replace(
-    /\b\d{4,}\b/g,
-    (num) => `**${num}**`
-  );
+  text = text.replace(/\b\d{4,}\b/g, (num) => `**${num}**`);
+  text = text.replace(/\b(\$|₦|€|£)\d+(\.\d{1,2})?\b/g, (m) => `**${m}**`);
 
-  // 💅 9. Add double spacing between paragraphs
+  // 💅 9. Double space between paragraphs
   text = text.replace(/\n{2,}/g, '\n\n');
 
   // 🚀 10. Final polish
