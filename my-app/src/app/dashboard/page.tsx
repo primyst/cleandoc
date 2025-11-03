@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { cleanTextByPlan } from '@/utils/cleanTextByPlan'
+import { cleanTextByPlan } from '@/utils/cleanText'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, CheckCircle2, Lock } from 'lucide-react'
