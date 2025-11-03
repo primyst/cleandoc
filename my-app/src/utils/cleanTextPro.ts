@@ -32,21 +32,19 @@ export function cleanTextPro(input: string): string {
     text = text.replace(regex, value);
   }
 
-  // 🧠 5. Smart paragraph detection
-  // If a line looks like a header (ALL CAPS or ends with ":")
+  // 🧠 5. Smart paragraph and header detection
   const lines = text.split(/(?<=\n)|(?<=\.\s)/);
   const formatted: string[] = [];
 
   for (let line of lines) {
     line = line.trim();
-
     if (!line) continue;
 
-    // Header-style line
-    if ((/^[A-Z0-9 ,.'"()_-]+$/.test(line) && line.length > 3) || line.endsWith(':')) {
-      formatted.push(`\n# ${line.charAt(0).toUpperCase() + line.slice(1).toLowerCase()}\n`);
+    // Only treat as header if it's short and uppercase or ends with a colon
+    if ((/^[A-Z0-9 ,.'"()_-]+$/.test(line) && line.split(' ').length <= 6) || line.endsWith(':')) {
+      formatted.push(`\n## ${line.charAt(0).toUpperCase() + line.slice(1).toLowerCase()}\n`);
     }
-    // Bullet-like line (starts with "- " or "* ")
+    // Bullet-like line
     else if (/^[-*•]\s+/.test(line)) {
       formatted.push(line);
     }
@@ -61,10 +59,31 @@ export function cleanTextPro(input: string): string {
   // 🪶 6. Remove repeated words
   text = text.replace(/\b(\w+)\s+\1\b/gi, '$1');
 
-  // 💅 7. Add double spacing between paragraphs for readability
+  // ✨ 7. Highlight important keywords
+  const keywords = [
+    'Name', 'Date', 'Email', 'Phone', 'Address', 'Amount', 'Price', 'Deadline',
+    'Signature', 'Department', 'Title', 'Reference', 'Subject', 'Note'
+  ];
+
+  for (const word of keywords) {
+    const regex = new RegExp(`\\b(${word})\\b`, 'gi');
+    text = text.replace(regex, '**$1**'); // Markdown bold
+  }
+
+  // 🔢 8. Format emails and numbers
+  text = text.replace(
+    /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+    '**$1**'
+  );
+  text = text.replace(
+    /\b\d{4,}\b/g,
+    (num) => `**${num}**`
+  );
+
+  // 💅 9. Add double spacing between paragraphs
   text = text.replace(/\n{2,}/g, '\n\n');
 
-  // 🚀 8. Capitalize start of document and ensure clean finish
+  // 🚀 10. Final polish
   text = text.charAt(0).toUpperCase() + text.slice(1);
   if (!/[.!?]$/.test(text)) text += '.';
 
