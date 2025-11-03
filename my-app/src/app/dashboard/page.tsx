@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import cleanTextPro from '@/utils/cleanTextPro' // ✅ Default import
+import cleanTextPro from '@/utils/cleanTextPro'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, LogOut } from 'lucide-react'
+import { Loader2, LogOut, Copy } from 'lucide-react'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [inputText, setInputText] = useState('')
   const [cleanedText, setCleanedText] = useState('')
   const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
   // ✅ Fetch user info
@@ -48,6 +49,14 @@ export default function DashboardPage() {
     }, 300)
   }
 
+  // ✅ Handle Copy
+  const handleCopy = async () => {
+    if (!cleanedText) return
+    await navigator.clipboard.writeText(cleanedText.replace(/\*\*/g, ''))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   // ✅ Logout
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -55,7 +64,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="sticky top-0 bg-white/70 backdrop-blur-md border-b border-gray-200 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -90,7 +99,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main */}
-      <main className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 space-y-8 w-full">
         {/* Input */}
         <Card className="shadow-sm hover:shadow-md transition-all duration-200">
           <CardContent className="p-6 flex flex-col gap-4">
@@ -118,7 +127,18 @@ export default function DashboardPage() {
         {cleanedText && (
           <Card className="shadow-sm border border-gray-200">
             <CardContent className="p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-800">🧾 Cleaned Text</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-800">🧾 Cleaned Text</h2>
+                <Button
+                  variant="outline"
+                  onClick={handleCopy}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <Copy size={16} />
+                  {copied ? 'Copied!' : 'Copy'}
+                </Button>
+              </div>
+
               <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
                 {cleanedText.split('\n\n').map((line, idx) => (
                   <p key={idx} className={line.startsWith('**') ? 'font-bold' : ''}>
