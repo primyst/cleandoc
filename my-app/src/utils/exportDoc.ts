@@ -1,22 +1,25 @@
-import { Document, Packer, Paragraph, HeadingLevel, TextRun } from 'docx'
+import { exportDocFree } from './exportDocFree'
+import { exportDocPro } from './exportDocPro'
 
-export async function generateDocx(markdown: string) {
-  const lines = markdown.split('\n\n')
-  const children: Paragraph[] = []
+/**
+ * Exports DOCX according to user plan.
+ * Automatically falls back to Free if Pro export fails.
+ */
+export async function exportDocByPlan(
+  text: string,
+  plan: 'free' | 'pro',
+  username?: string
+) {
+  if (!text) return
 
-  for (const line of lines) {
-    if (line.startsWith('# ')) {
-      children.push(new Paragraph({ text: line.replace('# ', ''), heading: HeadingLevel.HEADING_1 }))
-    } else if (line.startsWith('## ')) {
-      children.push(new Paragraph({ text: line.replace('## ', ''), heading: HeadingLevel.HEADING_2 }))
-    } else if (/^[-*•]\s+/.test(line)) {
-      children.push(new Paragraph({ text: line.replace(/^[-*•]\s+/, ''), bullet: { level: 0 } }))
+  try {
+    if (plan === 'pro') {
+      await exportDocPro(text, username)
     } else {
-      children.push(new Paragraph({ children: [new TextRun({ text: line, font: 'Calibri' })] }))
+      await exportDocFree(text)
     }
+  } catch (err) {
+    console.error('Export failed, using Free version as fallback:', err)
+    await exportDocFree(text)
   }
-
-  const doc = new Document({ sections: [{ properties: {}, children }] })
-  const blob = await Packer.toBlob(doc)
-  return blob
 }
