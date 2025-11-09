@@ -26,7 +26,7 @@ const HEADER_KEYWORDS = [
   'Budget','Cost Analysis','Next Steps','Assumptions','Key Terms'
 ];
 
-export async function exportDocProNextGen(
+export async function exportDocPro(
   cleanedText: string,
   options: ExportOptions = {}
 ) {
