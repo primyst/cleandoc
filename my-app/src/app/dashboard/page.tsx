@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabaseClient'
 import cleanTextPro from '@/utils/cleanTextPro'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2, LogOut, Copy } from 'lucide-react'
+import { Loader2, LogOut, Copy, Download } from 'lucide-react'
+import { exportDocFree } from '@/utils/exportDocFree'
+import { exportDocPro } from '@/utils/exportDocPro'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -55,6 +57,17 @@ export default function DashboardPage() {
     await navigator.clipboard.writeText(cleanedText.replace(/\*\*/g, ''))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  // ✅ Handle Export
+  const handleExport = async () => {
+    if (!cleanedText) return
+    const plainText = cleanedText.replace(/\*\*/g, '')
+    if (plan === 'pro') {
+      await exportDocPro(plainText)
+    } else {
+      await exportDocFree(plainText)
+    }
   }
 
   // ✅ Logout
@@ -129,14 +142,25 @@ export default function DashboardPage() {
             <CardContent className="p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-gray-800">🧾 Cleaned Text</h2>
-                <Button
-                  variant="outline"
-                  onClick={handleCopy}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <Copy size={16} />
-                  {copied ? 'Copied!' : 'Copy'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleCopy}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Copy size={16} />
+                    {copied ? 'Copied!' : 'Copy'}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={handleExport}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Download size={16} />
+                    Export as DOCX
+                  </Button>
+                </div>
               </div>
 
               <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-700 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
