@@ -5,15 +5,20 @@ import {
   TextRun,
   HeadingLevel,
   AlignmentType,
+  Table,
+  TableCell,
+  TableRow,
+  WidthType,
+  BorderStyle,
 } from 'docx';
 import { saveAs } from 'file-saver';
 
 interface ExportOptions {
-  showGeneratedBy?: boolean; // Optional, default false
+  showGeneratedBy?: boolean;
   username?: string;
 }
 
-export async function exportDocPro(
+export async function exportDocProNextGen(
   cleanedText: string,
   options: ExportOptions = {}
 ) {
@@ -22,73 +27,87 @@ export async function exportDocPro(
   const { showGeneratedBy = false, username } = options;
 
   const lines = cleanedText.split(/\n+/).map((l) => l.trim()).filter(Boolean);
-
   const paragraphs: Paragraph[] = [];
-  let currentBulletLevel = 0;
+  const tocEntries: Paragraph[] = [];
+  let listStack: { level: number; children: Paragraph[] }[] = [];
+
+  const headerKeywords = ['Key Highlights', 'Next Steps', 'Note', 'Urgent Attention'];
 
   for (let line of lines) {
-    // 1️⃣ Bullet detection
-    const bulletMatch = line.match(/^(\s*)([-*])\s+(.*)$/);
+    // 1️⃣ Handle bullet / numbered lists
+    const bulletMatch = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
     if (bulletMatch) {
-      const [, spaces, , content] = bulletMatch;
+      const [_, spaces, marker, content] = bulletMatch;
       const level = Math.floor(spaces.length / 2); // 2 spaces per indent
+      const isNumbered = /\d+\./.test(marker);
+
       paragraphs.push(
         new Paragraph({
           text: content,
-          bullet: { level },
-          spacing: { after: 150 },
+          bullet: isNumbered ? undefined : { level },
+          numbering: isNumbered
+            ? { reference: 'numbered-list', level }
+            : undefined,
+          spacing: { after: 100 },
         })
       );
       continue;
     }
 
     // 2️⃣ Header detection
-    // Lines ending with ":" or all uppercase, or "Key Highlights", "Next Steps", etc.
-    const headerKeywords = ['Key Highlights', 'Next Steps', 'Note', 'Urgent Attention'];
     const isHeader =
       line.endsWith(':') ||
       line === line.toUpperCase() ||
       headerKeywords.some((k) => line.startsWith(k));
 
     const parts = line.split('**'); // bold highlights
-    const runs = parts.map((part, i) =>
-      new TextRun({
-        text: part.trim(),
-        bold: i % 2 !== 0,
-      })
-    );
+    const runs = parts.map((part, i) => new TextRun({ text: part.trim(), bold: i % 2 !== 0 }));
 
     if (isHeader) {
+      const headingLevel =
+        line.startsWith('Key Highlights') || line.startsWith('Next Steps')
+          ? HeadingLevel.HEADING_2
+          : HeadingLevel.HEADING_2;
+
       paragraphs.push(
         new Paragraph({
           children: runs,
-          heading: HeadingLevel.HEADING_2,
+          heading: headingLevel,
           spacing: { before: 300, after: 200 },
           alignment: AlignmentType.LEFT,
+        })
+      );
+
+      // Add to TOC
+      tocEntries.push(
+        new Paragraph({
+          text: line.replace(':', ''),
+          style: 'TOCHeading',
         })
       );
       continue;
     }
 
-    // 3️⃣ Inline highlights (keywords, numbers, emails)
+    // 3️⃣ Key Highlights / Next Steps block styling
+    if (/^(Key Highlights|Next Steps)/i.test(line)) {
+      paragraphs.push(
+        new Paragraph({
+          children: runs,
+          spacing: { before: 200, after: 200 },
+          shading: { fill: 'FFFFCC' },
+          bold: true,
+        })
+      );
+      continue;
+    }
+
+    // 4️⃣ Normal paragraphs with inline highlights
     const enhancedRuns: TextRun[] = [];
     const keywords = [
-      'Name',
-      'Date',
-      'Email',
-      'Phone',
-      'Address',
-      'Amount',
-      'Price',
-      'Deadline',
-      'Signature',
-      'Department',
-      'Title',
-      'Reference',
-      'Subject',
-      'Note',
-      'Terms',
-      'Agreement',
+      'Name', 'Date', 'Email', 'Phone', 'Address',
+      'Amount', 'Price', 'Deadline', 'Signature',
+      'Department', 'Title', 'Reference', 'Subject',
+      'Note', 'Terms', 'Agreement'
     ];
 
     let remaining = line;
@@ -101,10 +120,7 @@ export async function exportDocPro(
     while ((match = regex.exec(remaining))) {
       const before = remaining.slice(0, match.index);
       if (before) enhancedRuns.push(new TextRun({ text: before }));
-
-      enhancedRuns.push(
-        new TextRun({ text: match[0], bold: true, color: '000000' })
-      );
+      enhancedRuns.push(new TextRun({ text: match[0], bold: true, color: '000000' }));
       remaining = remaining.slice(match.index + match[0].length);
       regex.lastIndex = 0;
     }
@@ -118,7 +134,7 @@ export async function exportDocPro(
     );
   }
 
-  // 4️⃣ Optional closing note (not a watermark)
+  // 5️⃣ Optional closing note
   if (showGeneratedBy) {
     paragraphs.push(
       new Paragraph({
@@ -137,9 +153,27 @@ export async function exportDocPro(
   }
 
   const doc = new Document({
+    styles: {
+      paragraphStyles: [
+        { id: 'TOCHeading', name: 'TOC Heading', quickFormat: true },
+      ],
+    },
+    numbering: {
+      config: [
+        {
+          reference: 'numbered-list',
+          levels: Array.from({ length: 9 }, (_, i) => ({
+            level: i,
+            format: 'decimal',
+            text: '%1.',
+            alignment: AlignmentType.START,
+          })),
+        },
+      ],
+    },
     sections: [{ children: paragraphs }],
   });
 
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, 'CleanDoc_Pro.docx');
+  saveAs(blob, 'CleanDoc_Pro_NextGen.docx');
 }
