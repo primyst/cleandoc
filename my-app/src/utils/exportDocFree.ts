@@ -4,6 +4,7 @@ import { saveAs } from 'file-saver'
 export async function exportDocFree(text: string) {
   if (!text) return
 
+  // Split text into paragraphs
   const paragraphs = text
     .split('\n\n')
     .filter(Boolean)
@@ -14,7 +15,7 @@ export async function exportDocFree(text: string) {
       })
     )
 
-  // Add subtle watermark
+  // Add subtle footer
   paragraphs.push(
     new Paragraph({
       children: [
@@ -29,7 +30,31 @@ export async function exportDocFree(text: string) {
     })
   )
 
-  const doc = new Document({ sections: [{ children: paragraphs }] })
+  // ✨ Add faint diagonal watermark text
+  const watermarkParagraph = new Paragraph({
+    children: [
+      new TextRun({
+        text: 'CLEANDOC FREE VERSION',
+        bold: true,
+        color: 'D3D3D3', // light gray
+        size: 72, // large, but faint
+      }),
+    ],
+    alignment: 'center',
+    spacing: { after: 200 },
+  })
+
+  const doc = new Document({
+    sections: [
+      {
+        headers: {
+          default: watermarkParagraph, // Watermark in header area
+        },
+        children: paragraphs,
+      },
+    ],
+  })
+
   const blob = await Packer.toBlob(doc)
   saveAs(blob, 'CleanDoc_Free.docx')
 }
