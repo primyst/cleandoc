@@ -87,6 +87,11 @@ export default function DashboardPage() {
             </h1>
             <p className="text-sm text-gray-500">
               You’re on the <span className="font-semibold">{plan.toUpperCase()}</span> plan
+              {plan === 'pro' && (
+                <span className="block text-xs text-gray-400 mt-0.5">
+                  Pro version is also free for now — it’s under development, you can try it.
+                </span>
+              )}
             </p>
           </div>
 
@@ -180,6 +185,11 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Footer Note */}
+        <p className="text-center text-xs text-gray-400 mt-6">
+          ⚡ Pro version is currently free during development — feel free to explore it!
+        </p>
       </main>
 
       {/* Upgrade Modal */}
